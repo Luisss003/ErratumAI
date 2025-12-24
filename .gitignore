@@ -1,0 +1,34 @@
+textlift-backend/HELP.md
+textlift-backend/target/
+textlift-backend/.mvn/wrapper/maven-wrapper.jar
+!textlift-backend/**/src/main/**/target/
+!textlift-backend/**/src/test/**/target/
+
+### STS ###
+textlift-backend/.apt_generated
+textlift-backend/.classpath
+textlift-backend/.factorypath
+textlift-backend/.project
+textlift-backend/.settings
+textlift-backend/.springBeans
+textlift-backend/.sts4-cache
+
+### IntelliJ IDEA ###
+textlift-backend/.idea
+textlift-backend/*.iws
+textlift-backend/*.iml
+textlift-backend/*.ipr
+
+### NetBeans ###
+textlift-backend/nbproject/private/
+textlift-backend/nbbuild/
+textlift-backend/dist/
+textlift-backend/nbdist/
+textlift-backend/.nb-gradle/
+textlift-backend/build/
+!textlift-backend/**/src/main/**/build/
+!textlift-backend/**/src/test/**/build/
+
+### VS Code ###
+textlift-backend/.vscode/
+
