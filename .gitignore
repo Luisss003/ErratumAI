@@ -32,3 +32,6 @@ textlift-backend/build/
 ### VS Code ###
 textlift-backend/.vscode/
 
+
+### GENERAL
+textlift-backend/.env
