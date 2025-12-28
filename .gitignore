@@ -35,3 +35,61 @@ textlift-backend/.vscode/
 
 ### GENERAL
 textlift-backend/.env
+
+# dependencies
+textlift-frontend/node_modules/
+
+# build outputs
+textlift-frontend/dist/
+textlift-frontend/dist-ssr/
+textlift-frontend/*.local
+
+# Vite cache
+textlift-frontend/.vite/
+
+# TypeScript
+textlift-frontend/*.tsbuildinfo
+
+# logs
+textlift-frontend/npm-debug.log*
+textlift-frontend/yarn-debug.log*
+textlift-frontend/yarn-error.log*
+textlift-frontend/pnpm-debug.log*
+textlift-frontend/lerna-debug.log*
+textlift-frontend/*.log
+
+# env files (keep .env.example committed)
+textlift-frontend/.env
+textlift-frontend/.env.*
+!textlift-frontend/.env.example
+!textlift-frontend/.env.sample
+
+# coverage / test outputs
+textlift-frontend/coverage/
+textlift-frontend/.nyc_output/
+
+# editor / IDE
+textlift-frontend/.vscode/
+!textlift-frontend/.vscode/extensions.json
+!textlift-frontend/.vscode/settings.json
+textlift-frontend/.idea/
+textlift-frontend/*.iml
+
+# OS files
+textlift-frontend/.DS_Store
+textlift-frontend/Thumbs.db
+
+# misc
+textlift-frontend/*.swp
+textlift-frontend/*.swo
+
+# optional: if you use Turborepo
+textlift-frontend/.turbo/
+
+# optional: if you use Storybook
+textlift-frontend/storybook-static/
+
+# optional: if you use Cypress
+textlift-frontend/cypress/videos/
+textlift-frontend/cypress/screenshots/
+
