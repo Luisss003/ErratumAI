@@ -1,5 +1,6 @@
 package com.luis.textlift_backend.features.upload.service;
 
+import com.luis.textlift_backend.features.auth.domain.User;
 import com.luis.textlift_backend.features.document.domain.Document;
 import com.luis.textlift_backend.features.document.domain.DocumentStatus;
 import com.luis.textlift_backend.features.document.repository.DocumentRepository;
@@ -9,9 +10,12 @@ import com.luis.textlift_backend.features.upload.domain.UploadMode;
 import com.luis.textlift_backend.features.upload.domain.UploadSession;
 import com.luis.textlift_backend.features.upload.domain.UploadStatus;
 import com.luis.textlift_backend.features.upload.repository.UploadSessionRepository;
+import com.luis.textlift_backend.features.auth.repository.UserRepository;
 import jakarta.transaction.Transactional;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
@@ -31,12 +35,13 @@ public class UploadSessionService {
     private final UploadSessionRepository uploadRepo;
     private final DocumentRepository documentRepo;
     private final ApplicationEventPublisher events;
-    //private final FileHashCache hashCache;
+    private final UserRepository userRepository;
 
-    public UploadSessionService(UploadSessionRepository uploadRepo, DocumentRepository documentRepo, ApplicationEventPublisher events){
+    public UploadSessionService(UploadSessionRepository uploadRepo, DocumentRepository documentRepo, ApplicationEventPublisher events, UserRepository userRepository){
         this.uploadRepo = uploadRepo;
         this.documentRepo = documentRepo;
         this.events = events;
+        this.userRepository = userRepository;
     }
 
     public CreateUploadResponseDto createUpload(CreateUploadDto req){
@@ -53,6 +58,14 @@ public class UploadSessionService {
 
 
 */
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        String email = auth.getName();
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Could not find user!!!"
+                        ));
 
         Optional<UploadSession> existingUpload =
                 uploadRepo.findFirstByHashAndUploadStatusIn(req.hash(),
@@ -80,8 +93,9 @@ public class UploadSessionService {
         }else{
             //Generate an entry in the Upload table
             UploadSession session = new UploadSession();
+            session.setUser(user);
             session.setUploadStatus(UploadStatus.PENDING);
-            session.setMd5(req.hash());
+            session.setHash(req.hash());
 
             //Add to table
             UploadSession saved = uploadRepo.save(session);
@@ -161,7 +175,7 @@ public class UploadSessionService {
         document.setStatus(DocumentStatus.READY);
         document.setFilePath("/tmp/textlift/uploads/" + uploadId + ".pdf");
         document.setOriginalFileName(session.getOriginalFileName());
-        document.setHash(session.getMd5());
+        document.setHash(session.getHash());
 
         documentRepo.save(document);
 

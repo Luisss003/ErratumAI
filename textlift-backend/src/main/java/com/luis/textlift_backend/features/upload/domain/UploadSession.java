@@ -1,5 +1,7 @@
 package com.luis.textlift_backend.features.upload.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.luis.textlift_backend.features.auth.domain.User;
 import jakarta.persistence.*;
 
 import java.util.UUID;
@@ -11,6 +13,11 @@ import java.util.UUID;
 public class UploadSession {
     @Id @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    @JsonBackReference
+    private User user;
 
     @Column(nullable = false) @Enumerated(EnumType.STRING)
     private UploadStatus uploadStatus;
@@ -36,10 +43,14 @@ public class UploadSession {
     public void setOriginalFileName(String originalFileName) {
         this.originalFileName = originalFileName;
     }
-    public String getMd5() {
+    public String getHash() {
         return this.hash;
     }
-    public void setMd5(String md5) {
+    public void setHash(String md5) {
         this.hash = md5;
+    }
+
+    public void setUser(User user) {
+        this.user = user;
     }
 }
