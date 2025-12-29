@@ -10,14 +10,14 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/annotation")
+@RequestMapping("/api/v1/annotation")
 public class AnnotationController {
     private final AnnotationService annotationService;
     public AnnotationController(AnnotationService annotationService) {
         this.annotationService = annotationService;
     }
 
-    @GetMapping("/{id}")
+    @GetMapping("/document/{id}")
     public AnnotationFetchResponseDto getAnnotationsByDocId(@PathVariable UUID id){
         return this.annotationService.getNotesByDocId(id);
     }

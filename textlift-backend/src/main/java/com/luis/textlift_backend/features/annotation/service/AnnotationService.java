@@ -27,6 +27,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -82,10 +83,16 @@ public class AnnotationService {
                     String chunk = sb.toString();
                     sb.setLength(0);
                     var typeRef = new ParameterizedTypeReference<List<aiResponse>>() {};
-                    List<aiResponse> chunkNotes = this.chatClient.prompt()
+                    String raw = this.chatClient.prompt()
                             .user(buildPrompt(chunk))
                             .call()
-                            .entity(typeRef);
+                            .content();
+                    String cleaned = sanitizeModelJson(raw);
+
+                    List<aiResponse> chunkNotes = mapper.readValue(
+                            cleaned,
+                            new com.fasterxml.jackson.core.type.TypeReference<List<aiResponse>>() {}
+                    );
 
                     if (chunkNotes != null) all.addAll(chunkNotes);
                 }
@@ -97,10 +104,16 @@ public class AnnotationService {
             // flush remainder AFTER EOF
             if (!sb.isEmpty()) {
                 var typeRef = new ParameterizedTypeReference<List<aiResponse>>() {};
-                List<aiResponse> chunkNotes = this.chatClient.prompt()
+                String raw = this.chatClient.prompt()
                         .user(buildPrompt(sb.toString()))
                         .call()
-                        .entity(typeRef);
+                        .content();
+                String cleaned = sanitizeModelJson(raw);
+
+                List<aiResponse> chunkNotes = mapper.readValue(
+                        cleaned,
+                        new com.fasterxml.jackson.core.type.TypeReference<List<aiResponse>>() {}
+                );
 
                 if (chunkNotes != null) all.addAll(chunkNotes);
             }
@@ -128,16 +141,25 @@ public class AnnotationService {
     }
 
     public AnnotationFetchResponseDto getNotesByDocId(UUID docId) {
-        //Fetch annotation which is parent of annotation notes
         Document document = documentRepository.findById(docId)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Could not find document associated with this ID..."
-                        ));
-        //Assumption that this is only ever called if the document has been fully processed
-        return new AnnotationFetchResponseDto(document.getTextbook().getAnnotation().getNotes());
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Could not find document associated with this ID..."
+                ));
+
+        if (document.getStatus() != DocumentStatus.ANNOTATIONS_READY) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,
+                    "Document is not ready to process annotations!!!");
+        }
+
+        var notes = Optional.ofNullable(document.getTextbook())
+                .map(Textbook::getAnnotation)
+                .map(Annotation::getNotes)
+                .orElse(List.of()); // placeholder
+
+        return new AnnotationFetchResponseDto(notes);
     }
+
 
     private String buildPrompt(String chunk) {
         return """
@@ -160,4 +182,12 @@ public class AnnotationService {
             """ + chunk;
 }
 
+    private static final ObjectMapper mapper = new ObjectMapper();
+    private static String sanitizeModelJson(String s){
+        if(s == null) return null;
+        s = s.replace("\\_", "_");
+        s = s.replace("\\0", "\\u0000");
+
+        return s;
+    }
 }
