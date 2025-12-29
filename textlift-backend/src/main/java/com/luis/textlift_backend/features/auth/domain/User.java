@@ -1,5 +1,7 @@
 package com.luis.textlift_backend.features.auth.domain;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.luis.textlift_backend.features.upload.domain.UploadSession;
 import jakarta.persistence.*;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -15,6 +17,14 @@ public class User implements UserDetails {
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID id;
+
+    @OneToMany(
+        mappedBy = "user",
+        cascade = CascadeType.ALL
+    )
+    @JsonManagedReference
+    private List<UploadSession> uploadSessions;
+
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -95,5 +105,9 @@ public class User implements UserDetails {
 
     public void setEnabled(boolean b) {
         this.enabled = b;
+    }
+
+    public UUID getId() {
+        return id;
     }
 }

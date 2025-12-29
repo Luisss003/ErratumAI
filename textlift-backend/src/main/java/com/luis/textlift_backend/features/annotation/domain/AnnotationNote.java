@@ -24,16 +24,16 @@ public class AnnotationNote {
     @JsonBackReference
     private Annotation annotation;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String note;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String reason;
 
-    @Column
+    @Column(columnDefinition = "TEXT")
     private String quote;
 
-    @Column(name = "page_num")
+    @Column(columnDefinition = "TEXT")
     private String location;
 
     @Column
