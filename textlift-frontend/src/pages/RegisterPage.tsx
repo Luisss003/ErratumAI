@@ -2,6 +2,7 @@ import type { SignupRequest } from "../api/apiRequests";
 import { signup } from "../api/apiRequests";
 import {useForm, type SubmitHandler} from "react-hook-form";
 import axios from "axios";
+import { Navbar } from "../layout/Navbar";
 
 //USED https://www.youtube.com/watch?v=cc_xmawJ8Kg
 
@@ -34,6 +35,7 @@ export function RegisterPage(){
 
     return (
         <div className="">
+            <Navbar/>
             <h1>Register Page...</h1>
             <form className="" onSubmit={handleSubmit(onSubmit)}>
                 <input {...register("fullName", {

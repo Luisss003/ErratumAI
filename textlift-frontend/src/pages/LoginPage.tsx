@@ -4,6 +4,7 @@ import type { LoginRequest } from "../api/apiRequests";
 import {login} from "../api/apiRequests";
 import { useNavigate, useLocation, redirect, Navigate } from "react-router-dom";
 import { Button } from "../components/ui/Button";
+import { Navbar } from "../layout/Navbar";
 
 //TODO: possibly implement Zod?
 //USED https://www.youtube.com/watch?v=cc_xmawJ8Kg
@@ -43,7 +44,7 @@ export function LoginPage(){
 
     return (
         <div className="">
-
+            <Navbar/>
             <h1>Login Page...</h1>
             <form className="" onSubmit={handleSubmit(onSubmit)}>
                 <input {...register("email", {

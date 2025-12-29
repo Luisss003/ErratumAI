@@ -1,43 +1,76 @@
 import { NavLink } from "react-router-dom";
 import { Button } from "../components/ui/Button";
 import { clearToken } from "../auth/token";
+import { isLoggedIn } from "../auth/requireAuth";
 
-//Takes in destination and label of nav item as prompts, and returns a NavLink component.
-function NavItem({ to, label }: { to: string; label: string }) {  
-    return (
-        <NavLink
-            to={to}
-            className={({isActive}) => 
-                "rounded-md px-3 py-2 text-sm" + 
-                (isActive ? " bg-gray-900 text-white" : " text-black-300 bg-gray-300 hover:bg-gray-700 hover:text-white")
-            }
-        >
-            {label}
-        </NavLink>
-    );
+// Nav item with dark theme styles
+function NavItem({ to, label }: { to: string; label: string }) {
+  return (
+    <NavLink
+      to={to}
+      className={({ isActive }) =>
+        [
+          "rounded-lg px-3 py-2 text-sm font-semibold transition-colors",
+          "border border-slate-800",
+          isActive
+            ? "bg-slate-900 text-slate-100"
+            : "bg-slate-950 text-slate-300 hover:bg-slate-900 hover:text-slate-100",
+        ].join(" ")
+      }
+    >
+      {label}
+    </NavLink>
+  );
 }
 
-
 export function Navbar() {
-
-    const handleLogout = () => {
-      clearToken();
-      window.location.href = "/login";
-      alert("You have been logged out.");
-    };
+  const handleLogout = () => {
+    clearToken();
+    window.location.href = "/login";
+    alert("You have been logged out.");
+  };
 
   return (
-    <header className="border-b border-gray-200 bg-white">
+    <header className="border-b border-slate-800 bg-slate-950 text-slate-100">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        <div className="text-sm font-semibold">
-          <NavItem to="/" label="TextLift" />
+        {/* Brand */}
+        <div className="flex items-center gap-3">
+          <div className="grid h-9 w-9 place-items-center rounded-xl border border-slate-800 bg-slate-900">
+            <span className="text-sm font-bold tracking-tight">TL</span>
+          </div>
+
+          <div className="leading-tight">
+            <div className="text-sm font-semibold">
+              <NavLink to="/" className="hover:text-slate-50">
+                TextLift
+              </NavLink>
+            </div>
+            <div className="text-xs text-slate-400">Lift your textbooks into notes</div>
+          </div>
         </div>
-        <nav className="flex gap-1">
-          <NavItem to="/signup" label="Register" />
-          <NavItem to="/login" label="Login" />
-          <NavItem to="/upload" label="Upload" />
-          <NavItem to="/annotations" label="Annotations"/>
-          <Button type="button" className="bg-red-500" onClick={handleLogout} variant="secondary">Log out</Button>
+
+        {/* Nav */}
+        <nav className="flex items-center gap-2">
+          {isLoggedIn() ? (
+            <div className="flex items-center gap-2">
+              <NavItem to="/upload" label="Upload" />
+              <NavItem to="/documents" label="Documents" />
+
+              <Button
+                type="button"
+                onClick={handleLogout}
+                variant="secondary"
+                className="border border-slate-800 bg-slate-900 text-slate-100 hover:bg-red-600 hover:border-red-500"
+              >
+                Log out
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              <NavItem to="/signup" label="Register" />
+              <NavItem to="/login" label="Login" />
+            </div>
+          )}
         </nav>
       </div>
     </header>
