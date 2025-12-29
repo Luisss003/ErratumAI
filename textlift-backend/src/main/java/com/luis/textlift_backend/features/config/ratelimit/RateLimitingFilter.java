@@ -33,7 +33,7 @@ public class RateLimitingFilter extends OncePerRequestFilter {
     }
 
     private Bucket createNewBucket(String clientIp){
-        Bandwidth limit = Bandwidth.classic(10, Refill.greedy(10, Duration.ofMinutes(2)));
+        Bandwidth limit = Bandwidth.classic(10, Refill.greedy(10, Duration.ofMinutes(1)));
         return Bucket.builder().addLimit(limit).build();
     }
 
