@@ -4,6 +4,7 @@ import com.luis.textlift_backend.features.document.domain.Document;
 import com.luis.textlift_backend.features.document.domain.DocumentStatus;
 import com.luis.textlift_backend.features.document.repository.DocumentRepository;
 import com.luis.textlift_backend.features.textbook.api.dto.GoogleApiResponseDto;
+import com.luis.textlift_backend.features.textbook.api.dto.TextbookLookupDto;
 import com.luis.textlift_backend.features.textbook.domain.Textbook;
 import com.luis.textlift_backend.features.textbook.repository.TextbookRepository;
 import com.luis.textlift_backend.features.textbook.service.events.TextbookIdentifiedEvent;
@@ -16,6 +17,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 import java.util.UUID;
+
+import static org.apache.logging.log4j.util.Strings.isBlank;
 
 @Service
 public class TextbookService {
@@ -73,9 +76,17 @@ public class TextbookService {
         if(textbook.getTextbookName() == null || textbook.getTextbookName().isBlank()
                 || textbook.getEdition() == null || textbook.getEdition().isBlank()
                 || textbook.getAuthors() == null || textbook.getAuthors().isEmpty()){
-            GoogleApiResponseDto response = googleBooksApi.searchByIsbn(isbn13);
-            textbook.setAuthors(Arrays.asList(response.authors()));
-            textbook.setTextbookName(response.title());
+            googleBooksApi.searchByIsbn(isbn13).ifPresent(dto -> {
+                if (isBlank(textbook.getTextbookName()) && !isBlank(dto.title())) {
+                    textbook.setTextbookName(dto.title());
+                }
+                if ((textbook.getAuthors() == null || textbook.getAuthors().isEmpty())
+                        && dto.authors() != null && !dto.authors().isEmpty()) {
+                    textbook.setAuthors(dto.authors());
+                }
+            });
+
+            textbookRepository.save(textbook);
         }
 
         //Lastly, we want to only kickstart an annotation generation if this textbook hasn't already had annotation
