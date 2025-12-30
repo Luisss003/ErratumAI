@@ -149,9 +149,6 @@ public class DocumentService {
                 documents.addAll(currHashDocs);
             }
         }
-        System.out.println("DOCUMENTS:");
-        System.out.println(documents);
-        //After we have all documents, we want to build our list of GetUserUploadResponseDtos
 
         List<GetUserUploadsResponseDto> responseDtos = new ArrayList<>();
 
@@ -159,13 +156,11 @@ public class DocumentService {
             try {
                 var tb = doc.getTextbook();
                 if (tb == null) {
-                    System.out.println("Document " + doc.getId() + " has NULL textbook");
                     responseDtos.add(new GetUserUploadsResponseDto("UNKNOWN", DocumentStatus.FAILED_TO_IDENTIFY_ISBN, doc.getId()));
                 }else{
                     responseDtos.add(new GetUserUploadsResponseDto(tb.getTextbookName(), doc.getStatus(), doc.getId()));
                 }
             } catch (Exception e) {
-                System.out.println("Failed building DTO for docId=" + doc.getId());
                 e.printStackTrace();
             }
         }
