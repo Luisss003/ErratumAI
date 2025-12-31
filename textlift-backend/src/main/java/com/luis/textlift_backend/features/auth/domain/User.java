@@ -5,6 +5,7 @@ import com.fasterxml.jackson.annotation.JsonManagedReference;
 import com.luis.textlift_backend.features.upload.domain.UploadSession;
 import jakarta.persistence.*;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.time.LocalDateTime;
@@ -26,6 +27,9 @@ public class User implements UserDetails {
     @JsonManagedReference
     private List<UploadSession> uploadSessions;
 
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "role_id", referencedColumnName = "id", nullable = false)
+    private Role role;
 
     @Column(nullable = false, unique = true)
     private String email;
@@ -55,11 +59,10 @@ public class User implements UserDetails {
     public User() {
     }
 
-    //TODO: IMPLEMENT METHODS BELOW
-    //Returns user's rule-list
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities(){
-        return List.of();
+        SimpleGrantedAuthority authority = new SimpleGrantedAuthority("ROLE_" + role.getName().toString());
+        return List.of(authority);
     }
 
     @Override
@@ -112,4 +115,14 @@ public class User implements UserDetails {
     public UUID getId() {
         return id;
     }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
 }
+
+
