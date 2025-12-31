@@ -1,5 +1,6 @@
 package com.luis.textlift_backend.features.config.ratelimit;
 
+import com.github.benmanes.caffeine.cache.LoadingCache;
 import io.github.bucket4j.Bandwidth;
 import io.github.bucket4j.Bucket;
 import io.github.bucket4j.Refill;
@@ -16,13 +17,20 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 @Component
 public class RateLimitingFilter extends OncePerRequestFilter {
-    private final Map<String, Bucket> buckets = new ConcurrentHashMap<>();
+    private final LoadingCache<String, Bucket> buckets;
+
+    public RateLimitingFilter(LoadingCache<String, Bucket> buckets) {
+        this.buckets = buckets;
+    }
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException,IOException {
-        String clientIp = request.getRemoteAddr();
-        Bucket bucket = buckets.computeIfAbsent(clientIp, this::createNewBucket);
+        //Rather than just storing IP addresses indefinitely, we can use Caffeine to
+        //cache them, allowing for more dynamic rate limiting.
+
+        String key = clientKey(request);
+        Bucket bucket = buckets.get(key);
         if(bucket.tryConsume(1)){
             filterChain.doFilter(request, response);
         }
@@ -32,9 +40,12 @@ public class RateLimitingFilter extends OncePerRequestFilter {
         }
     }
 
-    private Bucket createNewBucket(String clientIp){
-        Bandwidth limit = Bandwidth.classic(10, Refill.greedy(10, Duration.ofMinutes(1)));
-        return Bucket.builder().addLimit(limit).build();
+    private String clientKey(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For"); //X-forward-for first IP or remote Addr
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
 
