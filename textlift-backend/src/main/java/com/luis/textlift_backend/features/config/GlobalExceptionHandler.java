@@ -3,6 +3,8 @@ package com.luis.textlift_backend.features.config;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.security.SignatureException;
 import jakarta.servlet.http.HttpServletRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ProblemDetail;
@@ -15,6 +17,8 @@ import org.springframework.web.server.ResponseStatusException;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(ResponseStatusException.class)
     public ProblemDetail handleResponseStatus(ResponseStatusException ex, HttpServletRequest req) {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(
@@ -22,6 +26,7 @@ public class GlobalExceptionHandler {
                 ex.getReason() != null ? ex.getReason() : "Request failed"
         );
         pd.setProperty("path", req.getRequestURI());
+        log.error("Unhandled error path={} user={}", req.getRequestURI(), req.getRemoteUser(), ex);
         return pd;
     }
     @ExceptionHandler(DataIntegrityViolationException.class)
@@ -32,6 +37,7 @@ public class GlobalExceptionHandler {
                 "Email is already in use"
         );
         pd.setProperty("path", req.getRequestURI());
+        log.error("Unhandled error path={} user={}", req.getRequestURI(), req.getRemoteUser(), ex);
         return pd;
     }
 
@@ -41,6 +47,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Authentication failed");
         pd.setProperty("description", "The username or password is incorrect");
         pd.setProperty("path", req.getRequestURI());
+        log.error("Unhandled error path={} user={}", req.getRequestURI(), req.getRemoteUser(), ex);
         return pd;
     }
 
@@ -49,6 +56,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Account not allowed");
         pd.setProperty("description", "The account is locked/disabled");
         pd.setProperty("path", req.getRequestURI());
+        log.error("Unhandled error path={} user={}", req.getRequestURI(), req.getRemoteUser(), ex);
         return pd;
     }
 
@@ -57,6 +65,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.FORBIDDEN, "Forbidden");
         pd.setProperty("description", "You are not authorized to access this resource");
         pd.setProperty("path", req.getRequestURI());
+        log.error("Unhandled error path={} user={}", req.getRequestURI(), req.getRemoteUser(), ex);
         return pd;
     }
 
@@ -66,6 +75,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Invalid token");
         pd.setProperty("description", "The JWT signature is invalid");
         pd.setProperty("path", req.getRequestURI());
+        log.error("Unhandled error path={} user={}", req.getRequestURI(), req.getRemoteUser(), ex);
         return pd;
     }
 
@@ -74,6 +84,7 @@ public class GlobalExceptionHandler {
         ProblemDetail pd = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, "Token expired");
         pd.setProperty("description", "The JWT token has expired");
         pd.setProperty("path", req.getRequestURI());
+        log.error("Unhandled error path={} user={}", req.getRequestURI(), req.getRemoteUser(), ex);
         return pd;
     }
 
@@ -86,6 +97,7 @@ public class GlobalExceptionHandler {
         );
         pd.setProperty("description", "Unknown internal server error.");
         pd.setProperty("path", req.getRequestURI());
+        log.error("Unhandled error path={} user={}", req.getRequestURI(), req.getRemoteUser(), ex);
         return pd;
     }
 }
