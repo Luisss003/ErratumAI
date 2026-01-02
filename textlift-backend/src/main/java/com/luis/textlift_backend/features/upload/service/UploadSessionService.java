@@ -25,9 +25,9 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
-import java.util.List;
-import java.util.Optional;
-import java.util.UUID;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.*;
 
 @Service
 public class UploadSessionService {
@@ -36,12 +36,18 @@ public class UploadSessionService {
     private final DocumentRepository documentRepo;
     private final ApplicationEventPublisher events;
     private final UserRepository userRepository;
+    private final VirusTotalApi virusTotalApi;
 
-    public UploadSessionService(UploadSessionRepository uploadRepo, DocumentRepository documentRepo, ApplicationEventPublisher events, UserRepository userRepository){
+    public UploadSessionService(UploadSessionRepository uploadRepo,
+                                DocumentRepository documentRepo,
+                                ApplicationEventPublisher events,
+                                UserRepository userRepository,
+                                VirusTotalApi virusTotalApi){
         this.uploadRepo = uploadRepo;
         this.documentRepo = documentRepo;
         this.events = events;
         this.userRepository = userRepository;
+        this.virusTotalApi = virusTotalApi;
     }
 
     public CreateUploadResponseDto createUpload(CreateUploadDto req){
@@ -60,22 +66,41 @@ public class UploadSessionService {
                                 "Could not find user!!!"
                         ));
 
+        //First, we want to check for any existing in-progress uploads
+        //of the same file that from the same user
+        //(We cannot safely globally dedupe without post-processing)
         Optional<UploadSession> existingUpload =
-                uploadRepo.findFirstByHashAndUploadStatusIn(req.hash(),
-                        List.of(UploadStatus.PENDING, UploadStatus.UPLOADING));
+                uploadRepo.findFirstByUser_IdAndHashAndUploadStatusIn(
+                        user.getId(),
+                        req.hash(),
+                        List.of(UploadStatus.PENDING, UploadStatus.UPLOADING)
+                );
 
+        //If an upload by this user exists, we simply return the details of that upload
+        //and tell the user to wait
         if (existingUpload.isPresent()) {
+            UploadSession session = existingUpload.get();
             return new CreateUploadResponseDto(
                     UploadMode.CACHE_HIT_WAIT,
-                    existingUpload.get().getId(),
-                    existingUpload.get().getUploadStatus(),
+                    session.getId(),
+                    session.getUploadStatus(),
                     null
             );
         }
-        //Else, we want to verify whether the hash exists in the DB at all (processed, but not in cache)
+
         Optional<Document> existing = documentRepo.findByHash(req.hash());
+        //If the document has been uploaded previously
         if(existing.isPresent()){
+            //If the document's annotations are deemed ready
             if(existing.get().getStatus() == DocumentStatus.ANNOTATIONS_READY){
+                //Then create a new upload session for this user, as to permit them to access the annotations
+                //(remember that the user's ability to see annotations is based on their upload sessions)
+                //and then return the CACHE_HIT to the frontend
+                UploadSession session = new UploadSession();
+                session.setUser(user);
+                session.setUploadStatus(UploadStatus.PREMATURE_HIT);
+                session.setHash(req.hash());
+                uploadRepo.save(session);
                 return new CreateUploadResponseDto(UploadMode.CACHE_HIT,null,null,existing.get().getId());
             }
             //Otherwise, we are in the process of generating the annotations, so ask the user to try again later
@@ -98,7 +123,6 @@ public class UploadSessionService {
 
     public UploadResponseDto uploadFile(UUID uploadId, MultipartFile file){
         User user = currentUser();
-        System.out.println("The current user is " + user.getFullName());
         //We want to load the upload session as long as the current request is by the user that owns it
         UploadSession session = uploadRepo.findByIdAndUser_Id(uploadId, user.getId())
             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Upload session not found"));
@@ -110,15 +134,14 @@ public class UploadSessionService {
         //Update the session status
         session.setUploadStatus(UploadStatus.UPLOADING);
 
+        //Generate a temp file path and write the directory to host
+        Path dir = Path.of("/tmp/textlift/uploads/");
+
+        //Specify .part for file uploading, then final filename
+        Path finalPath = dir.resolve(uploadId + ".pdf");
+        Path partPath = dir.resolve(uploadId + ".pdf.part");
         try{
-            //Generate a temp file path and write the directory to host
-            Path dir = Path.of("/tmp/textlift/uploads/");
             Files.createDirectories(dir);
-
-            //Specify .part for file uploading, then final filename
-            Path finalPath = dir.resolve(uploadId + ".pdf");
-            Path partPath = dir.resolve(uploadId + ".pdf.part");
-
             try(InputStream in = file.getInputStream()){
                 if(file.isEmpty()){
                     throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "File is empty!!!");
@@ -129,12 +152,27 @@ public class UploadSessionService {
 
                 Files.copy(in, partPath, StandardCopyOption.REPLACE_EXISTING);
 
-                //Validate a file type
+                //Validate that it is a PDF file
                 validatePdf(partPath);
 
                 Files.move(partPath, finalPath,
                         StandardCopyOption.REPLACE_EXISTING,
                         StandardCopyOption.ATOMIC_MOVE);
+
+                //Validate hash given to us by the user with real file hash
+                validateHash(finalPath, session.getHash());
+
+                //Once the hash is validated to match the file, we can check with VirusTotal to see if it is malicious
+                VirusTotalApi.Verdict virusTotalVerdict = virusTotalApi.check(session.getHash());
+                if(virusTotalVerdict == VirusTotalApi.Verdict.UNSAFE){
+                    //If we can't safely process the file, simply delete the upload session from the DB,
+                    session.setUploadStatus(UploadStatus.REJECTED_UNSAFE);
+                    uploadRepo.save(session);
+                    //and below, the file itself is deleted with the catch
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "We cannot safely process this file.");
+                } else if (virusTotalVerdict == VirusTotalApi.Verdict.RETRY_LATER) {
+                    throw new ResponseStatusException(HttpStatus.TOO_MANY_REQUESTS, "VirusTotal rate limited; please retry shortly.");
+                }
 
                 //Update session status
                 session.setUploadStatus(UploadStatus.UPLOADED);
@@ -149,14 +187,28 @@ public class UploadSessionService {
             //the upload failed and try again.
             session.setUploadStatus(UploadStatus.FAILED);
             uploadRepo.save(session);
+
+            //attempt to delete partial upload from disk
+            try {
+                Files.deleteIfExists(partPath);
+                Files.deleteIfExists(finalPath);
+            } catch (IOException ignored) {}
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
                     "Failed to store uploaded file",
                     e
             );
+        } catch (ResponseStatusException e){
+            if(session.getUploadStatus() != UploadStatus.REJECTED_UNSAFE) {
+                session.setUploadStatus(UploadStatus.FAILED);
+            }
+            uploadRepo.save(session);
+            try {
+                Files.deleteIfExists(partPath);
+                Files.deleteIfExists(finalPath);
+            } catch (IOException ignored) {}
+            throw e;
         }
-
-
     }
 
     @Transactional
@@ -204,8 +256,8 @@ public class UploadSessionService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "User not found!!"));
     }
 
-    //Checks magic bytes to validate file type
     private void validatePdf(Path partPath) {
+        //Checks magic bytes to validate file-type
         try (InputStream s = Files.newInputStream(partPath)) {
             byte[] head = s.readNBytes(5);
             boolean isPdf = head.length == 5
@@ -217,4 +269,29 @@ public class UploadSessionService {
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to validate upload", e);
         }
     }
+
+    private void validateHash(Path path, String userHash) {
+        final MessageDigest md;
+        try {
+            md = MessageDigest.getInstance("SHA-256");
+        } catch (NoSuchAlgorithmException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Hash algorithm unavailable", e);
+        }
+
+        try (InputStream is = Files.newInputStream(path)) {
+            byte[] buf = new byte[8192];
+            int r;
+            while ((r = is.read(buf)) != -1) {
+                md.update(buf, 0, r);
+            }
+        } catch (IOException e) {
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "Failed to read file for hashing", e);
+        }
+
+        String actual = HexFormat.of().formatHex(md.digest());
+        if (!Objects.equals(actual, userHash)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Hash mismatch");
+        }
+    }
+
 }

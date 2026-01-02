@@ -4,5 +4,7 @@ public enum UploadStatus {
     UPLOADING, //Bytes uploading
     UPLOADED,
     PENDING, //Record created; no bytes sent
-    FAILED
+    FAILED,
+    PREMATURE_HIT,
+    REJECTED_UNSAFE
 }
