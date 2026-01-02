@@ -9,6 +9,7 @@ import com.luis.textlift_backend.features.auth.service.JwtService;
 import com.luis.textlift_backend.features.auth.service.TokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
@@ -28,11 +29,18 @@ public class AuthenticationController {
     private final JwtService jwtService;
     private final AuthenticationService authenticationService;
     private final TokenService tokenService;
+    private final boolean secureCookies;
 
-    public AuthenticationController(JwtService jwtService, AuthenticationService authenticationService, TokenService tokenService) {
+    public AuthenticationController(
+            JwtService jwtService,
+            AuthenticationService authenticationService,
+            TokenService tokenService,
+            @Value("${auth.cookie.secure:true}") boolean secureCookies
+    ) {
         this.jwtService = jwtService;
         this.authenticationService = authenticationService;
         this.tokenService = tokenService;
+        this.secureCookies = secureCookies;
     }
 
     @PostMapping("/login")
@@ -63,11 +71,10 @@ public class AuthenticationController {
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(HttpServletRequest request) {
         String token = resolveToken(request);
-        if (token == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Missing or invalid token");
+        if (token != null) {
+            tokenService.revokeToken(token);
         }
 
-        tokenService.revokeToken(token);
         return ResponseEntity
                 .noContent()
                 .header(HttpHeaders.SET_COOKIE, buildExpiredAccessTokenCookie(request))
@@ -95,7 +102,7 @@ public class AuthenticationController {
         return ResponseCookie
                 .from(ACCESS_TOKEN_COOKIE, token)
                 .httpOnly(true)
-                .secure(isSecureRequest(request))
+                .secure(secureCookies)
                 .path("/")
                 .maxAge(Duration.ofMillis(jwtService.getExpirationTime()))
                 .sameSite("Strict")
@@ -107,17 +114,11 @@ public class AuthenticationController {
         return ResponseCookie
                 .from(ACCESS_TOKEN_COOKIE, "")
                 .httpOnly(true)
-                .secure(isSecureRequest(request))
+                .secure(secureCookies)
                 .path("/")
                 .maxAge(Duration.ZERO)
                 .sameSite("Strict")
                 .build()
                 .toString();
-    }
-
-    //
-    private boolean isSecureRequest(HttpServletRequest request) {
-        return request.isSecure() ||
-                "https".equalsIgnoreCase(request.getHeader("X-Forwarded-Proto"));
     }
 }
