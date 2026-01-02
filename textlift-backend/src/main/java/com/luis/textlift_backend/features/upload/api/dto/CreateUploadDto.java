@@ -13,6 +13,6 @@ public record CreateUploadDto(
         String hash,
 
         @NotNull
-        @Min(1) @Max(500000000)
+        @Min(1) @Max(25000000)
         Long sizeBytes
 ){}
