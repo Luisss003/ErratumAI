@@ -86,7 +86,7 @@ public class DocumentService {
         } catch (IOException e) {
             throw new ResponseStatusException(
                     HttpStatus.INTERNAL_SERVER_ERROR,
-                    "Failed to read PDF from path: " + docObj.getFilePath(),
+                    "Failed to read PDF",
                     e
             );
         }
