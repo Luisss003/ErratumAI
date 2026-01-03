@@ -39,21 +39,25 @@ export function Navbar() {
   };
 
   return (
-    <header className="border-b border-slate-800 bg-slate-950 text-slate-100">
+    <header className="border-b border-black  bg-black text-purple-100 font-mono">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div className="grid h-9 w-9 place-items-center rounded-xl border border-slate-800 bg-slate-900">
-            <span className="text-sm font-bold tracking-tight">TL</span>
+          <div className="grid h-9 w-9 place-items-center rounded-sm border border-violet-800 bg-violet-950">
+            <span className="text-sm font-bold tracking-tight">
+              <NavLink to="/">
+              <img src="/favicon.svg" alt="ErratumAI Logo" className="h-6 w-6" />
+              </NavLink>
+            </span>
           </div>
 
           <div className="leading-tight">
             <div className="text-sm font-semibold">
               <NavLink to="/" className="hover:text-slate-50">
-                TextLift
+                ErratumAI
               </NavLink>
             </div>
-            <div className="text-xs text-slate-400">Lift your textbooks into notes</div>
+            <div className="text-xs text-purple-400">Lift your textbooks into notes</div>
           </div>
         </div>
 
@@ -68,7 +72,7 @@ export function Navbar() {
                 type="button"
                 onClick={handleLogout}
                 variant="secondary"
-                className="border border-slate-800 bg-slate-900 text-slate-100 hover:bg-red-600 hover:border-red-500"
+                className="border border-black bg-black text-slate-100 hover:bg-red-600 hover:border-red-500"
               >
                 Log out
               </Button>

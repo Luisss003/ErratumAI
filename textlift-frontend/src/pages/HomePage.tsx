@@ -3,10 +3,10 @@ import { Navbar } from "../layout/Navbar";
 
 export function HomePage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-black text-slate-100 font-mono">
       <Navbar />
       <main className="mx-auto max-w-5xl px-4 py-10">
-        <section className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-sm">
+        <section className="rounded-2xl border border-black bg-black p-6 shadow-sm">
           <div className="flex flex-col gap-5 md:flex-row md:items-center md:justify-between">
             <div className="space-y-2">
               <h1 className="text-2xl font-bold tracking-tight md:text-3xl">
@@ -21,13 +21,13 @@ export function HomePage() {
             <div className="flex gap-2">
               <Link
                 to="/upload"
-                className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-400"
+                className="rounded-sm bg-purple-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-400"
               >
                 Start an upload
               </Link>
               <Link
                 to="/documents"
-                className="rounded-xl border border-slate-800 bg-slate-950 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
+                className="rounded-sm border border-slate-800 bg-slate-950 px-4 py-2 text-sm font-semibold text-slate-100 hover:bg-slate-800"
               >
                 View documents
               </Link>
@@ -35,7 +35,7 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="mt-6 grid gap-4 md:grid-cols-3">
+        <section className="bg-black mt-6 grid gap-4 md:grid-cols-3">
           <Card
             title="Upload PDF"
             desc="Create a new upload session and send a file."
@@ -58,7 +58,7 @@ export function HomePage() {
         </section>
 
         {/* moneygrab :) */}
-            <section className="mt-6 rounded-2xl border border-slate-800 bg-slate-900 p-6">
+            <section className="mt-6 rounded-2xl bg-black p-6">
             <div className="space-y-1">
                 <h2 className="text-sm font-semibold text-slate-100">Account Tiers</h2>
                 <p className="text-xs leading-relaxed text-slate-400">
@@ -72,7 +72,7 @@ export function HomePage() {
             <button
                 type="button"
                 onClick={() => alert("Coming soon 🙂")}
-                className="inline-flex items-center justify-center rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-400"
+                className="inline-flex items-center justify-center rounded-xl bg-red-900 px-4 py-2 text-sm font-semibold text-slate-950 hover:bg-cyan-400"
             >
                 Pro Tier — $1/month
             </button>

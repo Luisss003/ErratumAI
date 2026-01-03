@@ -3,7 +3,7 @@ import DocumentPreview from "../components/DocumentPreview";
 
 export default function UploadedDocumentsPage() {
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-black text-slate-100">
       <main className="mx-auto max-w-5xl px-4 py-10">
         <header className="mb-6">
           <h1 className="text-2xl font-bold tracking-tight md:text-3xl">

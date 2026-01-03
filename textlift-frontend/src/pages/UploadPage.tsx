@@ -12,13 +12,12 @@ export function UploadPage() {
   const [message, setMessage] = useState<{ kind: "info" | "success"; text: string } | null>(null);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100">
+    <div className="min-h-screen bg-black text-slate-100 font-mono">
       <main className="mx-auto max-w-5xl px-4 py-10">
         <header className="mb-6">
-          <h1 className="text-2xl font-bold tracking-tight md:text-3xl">Upload</h1>
-          <p className="mt-1 text-sm text-slate-400">
+          <h2 className="text-center mt-1 text-xl text-white">
             Upload a PDF to generate annotations and corrections.
-          </p>
+          </h2>
         </header>
 
         {message && (
