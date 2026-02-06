@@ -4,7 +4,7 @@ import { isLoggedIn } from "../auth/requireAuth";
 import { logout } from "../api/apiRequests";
 import { clearSession } from "../auth/token";
 
-// Nav item with dark theme styles
+
 function NavItem({ to, label }: { to: string; label: string }) {
   return (
     <NavLink
@@ -29,7 +29,7 @@ export function Navbar() {
     try {
       await logout();
     } catch (e) {
-      // Even if logout fails, still clear client state
+      //Even if logout faiuls, we still clear the session and redirect the user to the homepage
       console.error("Logout failed", e);
     } finally {
       clearSession();
@@ -39,7 +39,7 @@ export function Navbar() {
   };
 
   return (
-    <header className="border-b border-black  bg-black text-purple-100 font-mono">
+    <header className="  bg-black bg-opacity-40 text-purple-100 font-mono">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
         {/* Brand */}
         <div className="flex items-center gap-3">
@@ -57,11 +57,10 @@ export function Navbar() {
                 ErratumAI
               </NavLink>
             </div>
-            <div className="text-xs text-purple-400">Lift your textbooks into notes</div>
           </div>
         </div>
 
-        {/* Nav */}
+
         <nav className="flex items-center gap-2">
           {isLoggedIn() ? (
             <div className="flex items-center gap-2">

@@ -122,7 +122,7 @@ export default function DocumentPreview() {
               navigate(`/annotations/document/${doc.documentId}`);
             }
           }}
-          className="group w-full rounded-2xl border border-slate-800 bg-slate-950 p-5 text-left shadow-sm transition hover:bg-slate-900 active:scale-[0.99]"
+          className="group w-full rounded-2xl border border-amber-900 bg-amber-950/70 p-5 text-left shadow-sm transition hover:bg-amber-950/80 active:scale-[0.99]"
         >
           <div className="flex items-start justify-between gap-4">
             <div className="min-w-0">

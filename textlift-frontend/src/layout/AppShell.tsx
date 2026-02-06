@@ -8,9 +8,9 @@ type AppShellProps = {
 
 export function AppShell({ children }: AppShellProps) {
     return (
-        <div className="flex flex-col">
+        <div className="flex min-h-screen flex-col">
             <Navbar />
-            <main className="flex-grow bg-black p-4">
+            <main className="flex-grow bg-transparent">
                 {children ?? <Outlet />}
             </main>
         </div>

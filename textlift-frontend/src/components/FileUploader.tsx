@@ -96,7 +96,7 @@ export default function FileUploader({ onResult }: FileUploaderProps) {
   const isUploading = uploadStatus === "UPLOADING";
 
   return (
-    <div className="rounded-2xl border border-slate-800 bg-slate-900 p-6 shadow-sm">
+    <div className="rounded-2xl border border-amber-950 bg-amber-950 bg-opacity-80 p-6 shadow-sm">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-sm font-semibold text-slate-100">Upload a PDF</h2>
@@ -159,8 +159,8 @@ export default function FileUploader({ onResult }: FileUploaderProps) {
           type="button"
           onClick={handleFileUpload}
           disabled={!file || isUploading}
-          className="rounded-xl bg-cyan-500 px-4 py-2 text-sm font-semibold text-slate-950
-                     hover:bg-cyan-400 disabled:opacity-50"
+          className="rounded-xl bg-red-500 px-4 py-2 text-sm font-semibold text-slate-950
+                     hover:bg-red-400 active:bg-red-600 disabled:opacity-50"
         >
           {isUploading ? "Uploading…" : "Upload"}
         </button>
