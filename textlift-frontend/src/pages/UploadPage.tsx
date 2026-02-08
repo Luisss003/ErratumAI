@@ -41,7 +41,7 @@ export function UploadPage() {
                   kind: "success",
                   text: "Annotations already exist for this file. Redirecting…",
                 });
-                navigate(`/documents/${result.documentId}`);
+                navigate(`/annotations/document/${result.documentId}`);
                 return;
               }
 
