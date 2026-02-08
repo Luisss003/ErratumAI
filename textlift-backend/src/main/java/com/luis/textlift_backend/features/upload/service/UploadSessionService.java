@@ -12,7 +12,9 @@ import com.luis.textlift_backend.features.upload.domain.UploadStatus;
 import com.luis.textlift_backend.features.upload.repository.UploadSessionRepository;
 import com.luis.textlift_backend.features.auth.repository.UserRepository;
 import jakarta.transaction.Transactional;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -37,19 +39,22 @@ public class UploadSessionService {
     private final ApplicationEventPublisher events;
     private final UserRepository userRepository;
     private final VirusTotalApi virusTotalApi;
+    private RedisTemplate<String, String> redisTemplate;
 
     public UploadSessionService(UploadSessionRepository uploadRepo,
                                 DocumentRepository documentRepo,
                                 ApplicationEventPublisher events,
                                 UserRepository userRepository,
-                                VirusTotalApi virusTotalApi){
+                                VirusTotalApi virusTotalApi, RedisTemplate<String, String> redisTemplate){
         this.uploadRepo = uploadRepo;
         this.documentRepo = documentRepo;
         this.events = events;
         this.userRepository = userRepository;
         this.virusTotalApi = virusTotalApi;
+        this.redisTemplate = redisTemplate;
     }
 
+    @Cacheable(value = "file_hashes", key = "#req.hash()")
     public CreateUploadResponseDto createUpload(CreateUploadDto req){
         //Check business rules
         if(req.sizeBytes() > 250000000){
@@ -88,6 +93,13 @@ public class UploadSessionService {
             );
         }
 
+        //First, we want to check cache
+        String cacheHash = redisTemplate.opsForValue().get(req.hash());
+        if (cacheHash != null) {
+            System.out.println("Cache hit for " + UUID.fromString(cacheHash));
+            return new CreateUploadResponseDto(UploadMode.CACHE_HIT, null, null, UUID.fromString(cacheHash));
+        }
+        //Otherwise check the DB
         Optional<Document> existing = documentRepo.findByHash(req.hash());
         //If the document has been uploaded previously
         if(existing.isPresent()){
@@ -101,6 +113,8 @@ public class UploadSessionService {
                 session.setUploadStatus(UploadStatus.PREMATURE_HIT);
                 session.setHash(req.hash());
                 uploadRepo.save(session);
+                //Now save to file hash: documentId to the cache, and then return it to the user
+                redisTemplate.opsForValue().set(String.valueOf(req.hash()), String.valueOf(existing.get().getId()));
                 return new CreateUploadResponseDto(UploadMode.CACHE_HIT,null,null,existing.get().getId());
             }
             //Otherwise, we are in the process of generating the annotations, so ask the user to try again later

@@ -52,7 +52,7 @@ export function UploadPage() {
                     kind: "success",
                     text: "Annotations already exist for this file. Redirecting…",
                   });
-                  navigate(`/documents/${result.documentId}`);
+                  navigate(`/annotations/document/${result.documentId}`);
                   return;
                 }
 
@@ -64,12 +64,6 @@ export function UploadPage() {
                   navigate("/");
                   return;
                 }
-
-                setMessage({
-                  kind: "success",
-                  text: "Upload complete. Your document is queued for processing.",
-                });
-                navigate("/");
               }}
             />
           </section>
