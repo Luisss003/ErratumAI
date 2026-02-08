@@ -12,6 +12,6 @@ public interface DocumentRepository extends JpaRepository<Document, UUID> {
 
     List<Document> getDocumentsByHash(String hash);
     Optional<Document> getDocumentByHash(String hash);
-
+//
     Optional<Document> findById(UUID id);
 }
